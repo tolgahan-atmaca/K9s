@@ -1,0 +1,80 @@
+# k9s OFFLINE KURULUM RUNBOOK (Air-Gapped)
+
+Amaç: İnternete kapalı Linux sunucuya k9s’i `.deb` paketi ile kurmak.
+
+---
+
+## Ortamlar
+
+- [LOCAL-PC]        : İnternet var, paket indirilir
+- [JUMPBOX-WINDOWS] : RDP ile girilir, dosya aktarılır
+- [TARGET-LINUX]   : SSH ile girilir, k9s kurulumu yapılır
+
+LOCAL-PC → JUMPBOX-WINDOWS → TARGET-LINUX
+
+yaml
+Copy code
+
+---
+
+## Değişkenler (Yer Tutucu)
+
+- `<JUMPBOX_USER>` : Jumpbox Windows kullanıcı adı
+- `<TARGET_USER>`  : Linux kullanıcı adı
+- `<TARGET_IP>`    : Linux sunucu IP / FQDN
+
+---
+
+## Kurulum Adımları
+
+### 1) [TARGET-LINUX] Sistem uyumluluğunu kontrol et
+
+```bash
+uname -m
+# Beklenen: x86_64 (amd64)
+
+lsb_release -a
+# Beklenen: Ubuntu
+2) [LOCAL-PC] k9s paketini indir
+GitHub Releases üzerinden:
+k9s_linux_amd64.deb
+
+Dosyayı lokal bilgisayarda sakla
+
+3) [JUMPBOX-WINDOWS] Dosyayı jumpbox’a kopyala
+text
+Copy code
+C:\Users\<JUMPBOX_USER>\Downloads\k9s_linux_amd64.deb
+4) [JUMPBOX-WINDOWS] Dosyayı Linux sunucuya aktar
+PowerShell:
+
+powershell
+Copy code
+scp "C:\Users\<JUMPBOX_USER>\Downloads\k9s_linux_amd64.deb" <TARGET_USER>@<TARGET_IP>:/tmp/k9s_linux_amd64.deb
+5) [TARGET-LINUX] Dosyayı doğrula
+bash
+Copy code
+ls -lh /tmp/k9s_linux_amd64.deb
+
+file /tmp/k9s_linux_amd64.deb
+# Beklenen: Debian binary package (format 2.0)
+6) [TARGET-LINUX] Kurulumu yap
+bash
+Copy code
+sudo dpkg -i /tmp/k9s_linux_amd64.deb
+7) [TARGET-LINUX] Kurulumu doğrula
+bash
+Copy code
+k9s version
+# veya
+k9s
+8) [TARGET-LINUX] (Opsiyonel) Kurulum dosyasını sil
+bash
+Copy code
+sudo rm -f /tmp/k9s_linux_amd64.deb
+Notlar
+unexpected end of file → dosya bozuk / eksik kopyalanmıştır
+
+Jumpbox ve Target Linux internete çıkamaz
+
+k9s standalone binary’dir, ek bağımlılık gerekmez
